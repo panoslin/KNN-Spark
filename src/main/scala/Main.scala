@@ -18,6 +18,7 @@ object Main {
       .getOrCreate()
 
     val sc = spark.sparkContext
+    val startTime = System.nanoTime()
 
     val tr = spark.read.option("header", "true").option("inferSchema", "true")
       .csv(trainDatasetPath)
@@ -31,7 +32,6 @@ object Main {
       .map(pair => (pair._2, pair._1)) // index, data
       .cache()
 
-    val startTime = System.nanoTime()
 
     // (TestIdx, Predicted Label, Actual Label)
     val predictions = scala.collection.mutable.ArrayBuffer.empty[(Long, Double, Double)]
