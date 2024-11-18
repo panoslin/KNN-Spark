@@ -2,8 +2,8 @@ import org.apache.spark.sql.{Row, SparkSession}
 
 object Main {
   def main(args: Array[String]): Unit = {
-    if (args.length < 3) {
-      println("Usage: spark-submit --class Main <jar-file> <train-dataset-path> <test-dataset-path> <k>")
+    if (args.length < 5) {
+      println("Usage: spark-submit --class Main <jar-file> <train-dataset-path> <test-dataset-path> <k> <train-dataset-partitions> <test-dataset-partitions>")
       System.exit(1)
     }
 
@@ -11,6 +11,8 @@ object Main {
     val trainDatasetPath = args(0)
     val testDatasetPath = args(1)
     val k = args(2).toInt
+    val trainDatasetPartitions = args(3).toInt
+    val testDatasetPartitions = args(4).toInt
 
     val spark = SparkSession.builder()
       .appName("KNN")
@@ -23,12 +25,14 @@ object Main {
     val tr = spark.read.option("header", "true").option("inferSchema", "true")
       .csv(trainDatasetPath)
       .rdd
+      .repartition(trainDatasetPartitions)
       .cache()
 
     val ts = spark.read.option("header", "true").option("inferSchema", "true")
       .csv(testDatasetPath)
       .rdd
       .zipWithIndex()
+      .repartition(testDatasetPartitions)
       .map(pair => (pair._2, pair._1)) // index, data
       .cache()
 
@@ -104,8 +108,8 @@ object Main {
 
     println(f"Accuracy: ${accuracy * 100}%.4f%%")
 
-    val elapsedTimeInSeconds = (endTime - startTime) / 1e9
-    println(f"KNN algorithm execution time: $elapsedTimeInSeconds%.2f seconds")
+    val elapsedTimeInMs = (endTime - startTime) / 1e6
+    println(f"KNN algorithm execution time: $elapsedTimeInMs%.3f ms")
 
     spark.stop()
   }
